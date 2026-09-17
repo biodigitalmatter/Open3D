@@ -16,16 +16,17 @@ __usage_docker_test="USAGE:
 
 OPTION:
     # OpenBLAS AMD64 (Dockerfile.openblas)
-    openblas-amd64-py310-dev    : OpenBLAS AMD64 3.10 wheel, developer mode
-    openblas-amd64-py311-dev    : OpenBLAS AMD64 3.11 wheel, developer mode
-    openblas-amd64-py312-dev    : OpenBLAS AMD64 3.12 wheel, developer mode
-    openblas-amd64-py313-dev    : OpenBLAS AMD64 3.13 wheel, developer mode
-    openblas-amd64-py314-dev    : OpenBLAS AMD64 3.14 wheel, developer mode
-    openblas-amd64-py310        : OpenBLAS AMD64 3.10 wheel, release mode
-    openblas-amd64-py311        : OpenBLAS AMD64 3.11 wheel, release mode
-    openblas-amd64-py312        : OpenBLAS AMD64 3.12 wheel, release mode
-    openblas-amd64-py313        : OpenBLAS AMD64 3.13 wheel, release mode
-    openblas-amd64-py314        : OpenBLAS AMD64 3.14 wheel, release mode
+    openblas-amd64-py310-dev       : OpenBLAS AMD64 3.10 wheel, developer mode
+    openblas-amd64-py311-dev       : OpenBLAS AMD64 3.11 wheel, developer mode
+    openblas-amd64-py312-dev       : OpenBLAS AMD64 3.12 wheel, developer mode
+    openblas-amd64-ilp64-py312-dev : OpenBLAS (ILP64) AMD64 3.12 wheel, developer mode
+    openblas-amd64-py313-dev       : OpenBLAS AMD64 3.13 wheel, developer mode
+    openblas-amd64-py314-dev       : OpenBLAS AMD64 3.14 wheel, developer mode
+    openblas-amd64-py310           : OpenBLAS AMD64 3.10 wheel, release mode
+    openblas-amd64-py311           : OpenBLAS AMD64 3.11 wheel, release mode
+    openblas-amd64-py312           : OpenBLAS AMD64 3.12 wheel, release mode
+    openblas-amd64-py313           : OpenBLAS AMD64 3.13 wheel, release mode
+    openblas-amd64-py314           : OpenBLAS AMD64 3.14 wheel, release mode
 
     # OpenBLAS ARM64 (Dockerfile.openblas)
     openblas-arm64-py310-dev    : OpenBLAS ARM64 3.10 wheel, developer mode
@@ -126,9 +127,9 @@ docker_run_setup() {
         if [ -e /dev/dri ]; then
             docker_run="${docker_run} --device=/dev/dri"
         fi
-        if [ -n "${CI:-}" ]; then
-            docker_run="${docker_run} --env CI=${CI}"
-        fi
+    fi
+    if [ -n "${CI:-}" ]; then
+        docker_run="${docker_run} --env CI=${CI}"
     fi
 
     if [ "${BUILD_PYTORCH_OPS}" == "OFF" ] || [ "${BUILD_TENSORFLOW_OPS}" == "OFF" ]; then
@@ -150,10 +151,12 @@ cpp_test() {
     docker_run_setup
     restart_docker_daemon_if_on_gcloud
 
+    gtest_args="--gtest_shuffle"
+
     echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
     ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c " \
         cd build \
-     && ./bin/tests --gtest_shuffle \
+     && ./bin/tests ${gtest_args} \
     "
     restart_docker_daemon_if_on_gcloud
 }
@@ -311,6 +314,11 @@ openblas-amd64-py311-dev)
     ;;
 openblas-amd64-py312-dev)
     openblas_export_env amd64 py312 dev
+    openblas_print_env
+    run_docker_test_phases "${2:-all}"
+    ;;
+openblas-amd64-ilp64-py312-dev)
+    openblas_export_env amd64 ilp64 py312 dev
     openblas_print_env
     run_docker_test_phases "${2:-all}"
     ;;
